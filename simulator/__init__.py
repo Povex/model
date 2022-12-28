@@ -1,0 +1,47 @@
+
+from simulator.model.proof_of_stake.coin_age_proof_of_stake import CoinAgePoS
+from simulator.model.proof_of_stake.inverse_weighted import InverseWeightedPoS
+from simulator.model.proof_of_stake.random_proof_of_stake import RandomPoS
+from simulator.model.proof_of_stake.weighted_proof_of_stake import WeightedPoS
+
+import multiprocessing as mp
+
+from simulator.model.model_config import ModelConfig
+
+
+class ModelRunner:
+
+    @staticmethod
+    def model_selector():
+        pos_type = ModelConfig().pos_type
+        match pos_type:
+            case "random":
+                return RandomPoS()
+            case "weighted":
+                return WeightedPoS()
+            case "inverse_weighted":
+                return InverseWeightedPoS()
+            case "weighted_coin_age":
+                return CoinAgePoS()
+            case _:
+                raise Exception(f"No model matches the type {pos_type}")
+
+    @staticmethod
+    def run_model(return_list):
+        model = ModelRunner.model_selector()
+        model.run()
+        return_list.append(model.history)
+
+        return return_list
+
+    @staticmethod
+    def run(n_simulations=1, n_processors=mp.cpu_count()):
+        pool = mp.Pool(n_processors)
+        manager = mp.Manager()
+        return_list = manager.list()
+
+        for _ in range(n_simulations):
+            pool.apply_async(ModelRunner.run_model, args=(return_list,))
+        pool.close()
+        pool.join()
+        return return_list
