@@ -22,6 +22,7 @@ class ModelConfig(metaclass=Singleton):
     custom_distribution: List[float]
     initial_stake_volume: float
     block_reward: float
+    gini_threshold: float
     malicious_node_probability: float
     percent_stake_penalty: float
     stop_epoch_after_malicious: int

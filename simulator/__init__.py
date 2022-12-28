@@ -1,5 +1,7 @@
 
 from simulator.model.proof_of_stake.coin_age_proof_of_stake import CoinAgePoS
+from simulator.model.proof_of_stake.dynamic_weighted_coin_age_proof_of_stake import DynamicWeightedCoinAge
+from simulator.model.proof_of_stake.dynamic_weighted_proof_of_stake import DynamicWeighted
 from simulator.model.proof_of_stake.inverse_weighted import InverseWeightedPoS
 from simulator.model.proof_of_stake.random_proof_of_stake import RandomPoS
 from simulator.model.proof_of_stake.weighted_proof_of_stake import WeightedPoS
@@ -19,10 +21,14 @@ class ModelRunner:
                 return RandomPoS()
             case "weighted":
                 return WeightedPoS()
+            case "dynamic_weighted":
+                return DynamicWeighted()
             case "inverse_weighted":
                 return InverseWeightedPoS()
             case "weighted_coin_age":
                 return CoinAgePoS()
+            case "inverse_weighted_coin_age":
+                return DynamicWeightedCoinAge()
             case _:
                 raise Exception(f"No model matches the type {pos_type}")
 

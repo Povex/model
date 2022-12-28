@@ -12,7 +12,7 @@ def gini(x):
 
 
 def gini_irc(x):
-    """ Indice relativo di concentrazione di Gini """
+    """ Indice relativo di concentrazione di Gini, mi sembra più accurato"""
     x.sort()
     volume = sum(x)
     l = len(x)
