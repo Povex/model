@@ -3,6 +3,7 @@ from simulator.model.proof_of_stake.coin_age_proof_of_stake import CoinAgePoS
 from simulator.model.proof_of_stake.dynamic_weighted_coin_age_proof_of_stake import DynamicWeightedCoinAge
 from simulator.model.proof_of_stake.dynamic_weighted_proof_of_stake import DynamicWeighted
 from simulator.model.proof_of_stake.inverse_weighted import InverseWeightedPoS
+from simulator.model.proof_of_stake.log_weighted_proof_of_stake import LogWeightedPoS
 from simulator.model.proof_of_stake.random_proof_of_stake import RandomPoS
 from simulator.model.proof_of_stake.weighted_proof_of_stake import WeightedPoS
 
@@ -21,6 +22,8 @@ class ModelRunner:
                 return RandomPoS()
             case "weighted":
                 return WeightedPoS()
+            case "log_weighted":
+                return LogWeightedPoS()
             case "dynamic_weighted":
                 return DynamicWeighted()
             case "inverse_weighted":

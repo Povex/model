@@ -18,11 +18,13 @@ class ModelConfig(metaclass=Singleton):
     n_epochs: int
     pos_type: str
     initial_distribution: str
-    gini: float
+    gini_initial_distribution: float
     custom_distribution: List[float]
     initial_stake_volume: float
     block_reward: float
     gini_threshold: float
+    log_weighted_base: float
+    log_shift_factor: float
     malicious_node_probability: float
     percent_stake_penalty: float
     stop_epoch_after_malicious: int

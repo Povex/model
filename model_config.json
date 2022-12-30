@@ -1,9 +1,11 @@
 {
     "n_agents": 10,
     "n_epochs": 1000,
-    "pos_type": "inverse_weighted_coin_age",
-    "initial_distribution": "polynomial",
-    "gini": 0.9,
+    "pos_type": "log_weighted",
+    "initial_distribution": "gini",
+    "gini_initial_distribution": 0.9,
+    "log_weighted_base": 10,
+    "log_shift_factor": 100.0,
     "custom_distribution": [
         1,
         2,
@@ -27,5 +29,5 @@
     "min_coin_age": 0,
     "max_coin_age": 999999999999999,
     "early_withdrawing_penalty": 0.2,
-    "weighted_reward": 1.3
+    "weighted_reward": 1.0
 }

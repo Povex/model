@@ -20,7 +20,7 @@ class Distributions:
             case "custom":
                 return ModelConfig().custom_distribution
             case "gini":
-                return Distributions.gini(n, volume, ModelConfig().gini)
+                return Distributions.gini(n, volume, ModelConfig().gini_initial_distribution)
             case _:
                 raise ModelConfigException(f"No initial distribution found for {dist_type}")
 
