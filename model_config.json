@@ -1,8 +1,8 @@
 {
     "n_agents": 10,
-    "n_epochs": 100000,
+    "n_epochs": 1000,
     "pos_type": "random",
-    "initial_distribution": "constant",
+    "initial_distribution": "gini",
     "gini_initial_distribution": 0.9,
     "log_weighted_base": 10,
     "log_shift_factor": 100.0,

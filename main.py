@@ -1,17 +1,17 @@
 import warnings
 import simulator as sim
-from simulation_visualization import visualization_gini
+from data_visualization import visualization_gini, gini_on_stake_rewards, stake_histogram, prova_histogram_3d
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 def main():
-    model_config = {
+    sim.ModelConfig({
         "n_agents": 10,
-        "n_epochs": 100_000,
-        "pos_type": "random",
+        "n_epochs": 10000,
+        "pos_type": "weighted",
         "initial_distribution": "constant",
-        "gini_initial_distribution": 0.9,
+        "gini_initial_distribution": 0.5,
         "custom_distribution": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         "initial_stake_volume": 1000.0,
         "block_reward": 1.0,
@@ -27,11 +27,13 @@ def main():
         "max_coin_age": 999999999999999,
         "early_withdrawing_penalty": 0.2,
         "weighted_reward": 1.3
-    }
-    sim.ModelConfig(model_config)
+    })
     n_simulations = 4
     history = sim.ModelRunner.run(n_simulations=n_simulations)
-    visualization_gini(history)
+    # visualization_gini(history)
+    # gini_on_stake_rewards(history)
+    # stake_histogram(history)
+    prova_histogram_3d(history)
 
 
 if __name__ == "__main__":

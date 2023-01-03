@@ -16,8 +16,9 @@ def gini_irc(x):
     """ Indice relativo di concentrazione di Gini, mi sembra più accurato"""
     if type(x) == pd.DataFrame or type(x) == pd.Series:
         x = x.values.tolist()
-    x.sort()
     volume = sum(x)
+    if volume == 0: return 0
+    x.sort()
     l = len(x)
     q = []
     p = []
