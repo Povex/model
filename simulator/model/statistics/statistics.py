@@ -1,6 +1,7 @@
 from typing import List
 
 import numpy as np
+import pandas as pd
 
 
 def gini(x):
@@ -13,6 +14,8 @@ def gini(x):
 
 def gini_irc(x):
     """ Indice relativo di concentrazione di Gini, mi sembra più accurato"""
+    if type(x) == pd.DataFrame or type(x) == pd.Series:
+        x = x.values.tolist()
     x.sort()
     volume = sum(x)
     l = len(x)

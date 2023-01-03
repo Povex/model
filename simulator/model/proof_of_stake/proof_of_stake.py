@@ -29,10 +29,10 @@ class PoS:
     def run(self):
         for _ in tqdm(range(self.conf.n_epochs)):
             self.step()
+        self.history = pd.DataFrame.from_dict(self.history)
 
     def update_history(self):
-        dataframe = pd.DataFrame([{'id': a.unique_id, 'stake': a.get_stake()} for a in self.agents])
-        self.history.append(dataframe)
+        self.history.extend([{'epoch': self.epoch, 'id': a.unique_id, 'stake': a.get_stake()} for a in self.agents])
 
     def update_stop_epochs(self):
         free_agents = []

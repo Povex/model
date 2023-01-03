@@ -42,3 +42,6 @@ class ModelConfig(metaclass=Singleton):
         with open(path, 'r') as f:
             self.__dict__ = json.load(f)
 
+    def set_model_config(self, model_config):
+        self.__dict__ = model_config
+
