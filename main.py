@@ -1,16 +1,19 @@
+import logging
 import warnings
 import simulator as sim
-from data_visualization import visualization_gini, gini_on_stake_rewards, stake_histogram, prova_histogram_3d
+from data_visualization import visualization_gini_rcg, gini_on_stake_rewards, stake_histogram, position_indexes, \
+    dispersions_indexes
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     sim.ModelConfig({
         "n_agents": 10,
-        "n_epochs": 10000,
+        "n_epochs": 1000,
         "pos_type": "weighted",
-        "initial_distribution": "constant",
+        "initial_distribution": "polynomial",
         "gini_initial_distribution": 0.5,
         "custom_distribution": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         "initial_stake_volume": 1000.0,
@@ -30,10 +33,12 @@ def main():
     })
     n_simulations = 4
     history = sim.ModelRunner.run(n_simulations=n_simulations)
-    # visualization_gini(history)
-    # gini_on_stake_rewards(history)
-    # stake_histogram(history)
-    prova_histogram_3d(history)
+    #position_indexes(history)
+    dispersions_indexes(history)
+    #visualization_gini_rcg(history)
+    #gini_on_stake_rewards(history)
+    #stake_histogram(history)
+    # prova_histogram_3d(history)
 
 
 if __name__ == "__main__":
