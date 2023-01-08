@@ -1,3 +1,4 @@
+import pandas as pd
 
 from simulator.model.proof_of_stake.coin_age_proof_of_stake import CoinAgePoS
 from simulator.model.proof_of_stake.dynamic_weighted_coin_age_proof_of_stake import DynamicWeightedCoinAge
@@ -53,4 +54,8 @@ class ModelRunner:
             pool.apply_async(ModelRunner.run_model, args=(return_list,))
         pool.close()
         pool.join()
-        return return_list
+
+        compact_history = [return_list[i].assign(simulation=i) for i in range(len(return_list))]
+        compact_history = pd.concat(compact_history, ignore_index=True)
+
+        return compact_history

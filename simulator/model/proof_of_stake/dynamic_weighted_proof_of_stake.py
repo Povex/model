@@ -24,7 +24,7 @@ class DynamicWeighted(PoS):
         return random.choices(agents, weights=inverse_stakes)[0]
 
     def select_validator(self):
-        gini = gini_irc([a.stake for a in self.agents])
+        gini = gini_irc([a.stake for a in self.agents])  # TODO: use np version
         if gini > self.conf.gini_threshold:
             return self.inverse_weighted()
         return self.weighted()

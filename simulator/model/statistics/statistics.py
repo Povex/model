@@ -80,12 +80,8 @@ def gini_rcg(x: List[float]):
     return g * (l - 1) / l
 
 
-def lorenz_curve(x: List[float]):
-    x = sorted(x)
-    volume = sum(x)
-    tmp = 0
-    q = []
-    for i in range(len(x)):
-        tmp += x[i]
-        q.append(tmp / volume)
-    return q
+def lorenz_curve(x):
+    q = np.sort(x).cumsum() / np.sum(x)
+    n = len(x)
+    f = np.arange(1, n + 1) / float(n)
+    return f, q
