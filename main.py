@@ -11,27 +11,9 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def main():
     logging.basicConfig(level=logging.INFO)
-
-    experiments = Experiments().run()
-
-    gini_stake_diff_min = math.inf
-    gini_stake_diff_min_input = {'model_config': None, 'history': None}
-
-    gini_stake_diff_max = -math.inf
-    gini_stake_diff_max_input = {'model_config': None, 'history': None}
-
-
-    for experiment in experiments:
-        scores = Metrics(experiment['history']).scores(['gini_stakes_diff', 'gini_rewards_diff'])
-        gini_stake_diff = scores['gini_stakes_diff']['mean']
-        if gini_stake_diff < gini_stake_diff_min:
-            gini_stake_diff_min = gini_stake_diff
-            gini_stake_diff_min_input = experiment
-        if gini_stake_diff > gini_stake_diff_max:
-            gini_stake_diff_max = gini_stake_diff
-            gini_stake_diff_max_input = experiment
-    print(gini_stake_diff_min, gini_stake_diff_min_input)
-    print(gini_stake_diff_max, gini_stake_diff_max_input)
+    metrics = [Metrics.gini_stakes_diff, Metrics.gini_rewards_diff]
+    optimums = Experiments(metrics).run()
+    print(optimums)
     # Calcolare gli ottimi dei vari scores e interpretarli visualmente con il data visualization
 
 

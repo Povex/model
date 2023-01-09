@@ -1,7 +1,7 @@
 {
     "n_agents": 10,
     "n_epochs": 20000,
-    "pos_type": "log_weighted",
+    "pos_type": "random",
     "initial_distribution": "gini",
     "gini_initial_distribution": 0.7,
     "log_weighted_base": 1.0,
