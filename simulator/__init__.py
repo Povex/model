@@ -55,6 +55,7 @@ class ModelRunner:
         pool.close()
         pool.join()
 
+        # Concatenation of the simulations in one dataset
         compact_history = [return_list[i].assign(simulation=i) for i in range(len(return_list))]
         compact_history = pd.concat(compact_history, ignore_index=True)
 

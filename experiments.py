@@ -37,7 +37,7 @@ def get_default_model_config():
 
 class Experiments:
 
-    def __init__(self, metrics: List[str]):
+    def __init__(self, metrics: List[str], n_simulations=4):
         super().__init__()
         self.metrics = metrics
         self.current_model_config = get_default_model_config()
@@ -45,6 +45,7 @@ class Experiments:
         self.scores = None
         self.history = None
         self.optimums = self.init_optimums()
+        self.n_simulations = n_simulations
 
     def init_optimums(self):
         return {metric: {'min': {'value': math.inf,
@@ -68,7 +69,7 @@ class Experiments:
 
     def run_experiment(self):
         sim.ModelConfig().set_model_config(self.current_model_config)
-        self.history = sim.ModelRunner.run(n_simulations=4)
+        self.history = sim.ModelRunner.run(n_simulations=self.n_simulations)
         self.scores = Metrics(self.history).scores(self.metrics)
         self.update_optimums()
 
