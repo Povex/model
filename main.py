@@ -1,22 +1,19 @@
-import logging
-import math
-import warnings
-import simulator as sim
+import os
+import shutil
+from pathlib import Path
+
 from data_visualization import *
 from metrics import Metrics
 from experiments import Experiments
 
+import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
-#
 def main():
     logging.basicConfig(level=logging.INFO)
     metrics = [Metrics.gini_stakes_diff, Metrics.gini_rewards_diff]
     optimums = Experiments(metrics).run()
-    print(optimums)
-    # Calcolare gli ottimi dei vari scores e interpretarli visualmente con il data visualization
-    # Per ogni punto di ottimo esegui le data visualization e salva i risultati
 
     base_path = Path('results')
     if base_path.exists() and base_path.is_dir():
@@ -24,7 +21,9 @@ def main():
     if not os.path.exists(base_path):
         os.makedirs(base_path)
 
-    plots = DataVisualization(history=optimums[Metrics.gini_stakes_diff]['min']['history']).run()
+    data_visualization = DataVisualization()
+
+    plots = data_visualization.run(history=optimums[Metrics.gini_stakes_diff]['min']['history'])
     for plot_name in plots.keys():
         if not os.path.exists(base_path / Metrics.gini_stakes_diff):
             os.makedirs(base_path / Metrics.gini_stakes_diff)

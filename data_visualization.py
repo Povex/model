@@ -1,33 +1,28 @@
 import logging
-from pathlib import Path
-import shutil
 
-import os
-from typing import List
-
-import numpy as np
 from matplotlib import pyplot as plt
-import pandas as pd
 from matplotlib.ticker import PercentFormatter
 
-from simulator.model.statistics.statistics import gini_irc, lorenz_curve, gini_concentration_index, \
-    gini_concentration_ratio
+from simulator.model.statistics.statistics import *
 
 
 class DataVisualization:
 
-    def __init__(self, history: pd.DataFrame):
-        self.history = history
+    def __init__(self):
+        self.history = None
         self.plots = {}
 
-    def run(self):
-        self.plots['gini'] = self.visualization_gini_index()
-        self.plots['gini_concentration_ratio'] = self.visualization_gini_ratio()
-        self.plots['lorenz_curves'] = self.lorenz_curves_3d()
-        self.plots['first_last_stakes_hist'] = self.stake_histogram()
+    def run(self, history: pd.DataFrame):
+        self.history = history
+        self.plots['stakes_gini_index'] = self.__stakes_gini_index()
+        self.plots['stakes_gini_ratio'] = self.__stakes_gini_ratio()
+        self.plots['rewards_gini_index'] = self.__rewards_gini_index()
+        self.plots['rewards_gini_ratio'] = self.__rewards_gini_ratio()
+        self.plots['lorenz_curves'] = self.__lorenz_curves_3d()
+        self.plots['first_last_stakes_hist'] = self.__stake_histogram()
         return self.plots
 
-    def visualization_gini_index(self):
+    def __stakes_gini_index(self):
         """
         Data visualization of Gini concentration index in function of the epochs
         """
@@ -56,7 +51,7 @@ class DataVisualization:
         # plt.savefig(self.base_path / 'gini.png')
         return fig
 
-    def visualization_gini_ratio(self):
+    def __stakes_gini_ratio(self):
         """
         Data visualization of Gini concentration ratio in function of the epochs
         """
@@ -80,12 +75,12 @@ class DataVisualization:
         plt.grid()
         plt.legend()
         plt.title("Stake distributions", fontsize=17)
-        plt.ylabel("Gini concentration index", fontsize=14)
+        plt.ylabel("Gini concentration ratio", fontsize=14)
         plt.xlabel("Time [epochs]", fontsize=14)
         # plt.savefig(self.base_path / 'gini.png')
         return fig
 
-    def lorenz_curves_3d(self):
+    def __lorenz_curves_3d(self):
         # TODO: aggregate simulation stakes for lorenz curves
         # TODO: how i can show the std ?
         history = self.history.drop(columns=['id'])
@@ -116,7 +111,7 @@ class DataVisualization:
 
         return fig
 
-    def stake_histogram(self):
+    def __stake_histogram(self):
         # TODO: std deviation of this ?
         fig = plt.figure()
         plt.subplot(1, 2, 1)
@@ -139,30 +134,65 @@ class DataVisualization:
         plt.hist(self.history.query(f"simulation == {0}").query(f"epoch == {last_epoch}")["stake"], bins=10)
         return fig
 
+    def __rewards_gini_index(self):
+        initial_stakes = self.history.query("epoch == 0").query("simulation == 0")
+        history = self.history.merge(initial_stakes, on='id', suffixes=('', '_'))\
+            .eval("stake = stake - stake_")\
+            .drop(columns=['stake_'])
 
-def gini_on_stake_rewards(history: pd.DataFrame):
-    initial_stakes = history.query("epoch == 0").query("simulation == 0")
-    history_rewards = [simulation_df.merge(initial_stakes, on='id', suffixes=('', '_')).eval("stake = stake - stake_")
-                       .drop(columns=['stake_']) for simulation_df in history]
-    ginis = [simulation_df.groupby(['epoch'])["stake"].apply(gini_irc).to_frame().reset_index() for simulation_df in
-             history_rewards]
-    ginis_summary = pd.concat(ginis, ignore_index=True).groupby(["epoch"]).agg({'stake': ['mean', 'std']}).reset_index()
-    plt.clf()
-    x = ginis_summary["epoch"]
-    y_mean = ginis_summary["stake"]["mean"]
-    y_std_upper = y_mean + ginis_summary["stake"]["std"]
-    y_std_lower = y_mean - ginis_summary["stake"]["std"]
-    plt.plot(x, y_mean, label="mean ± std.dev", color='blue', linestyle="-")
-    plt.plot(x, y_std_upper, color='lightsteelblue', linestyle="-.", linewidth=0.5, alpha=0.1)
-    plt.plot(x, y_std_lower, color='lightsteelblue', linestyle="-.", linewidth=0.5, alpha=0.1)
-    plt.fill_between(x=x.values, y1=y_std_upper.values, y2=y_std_lower.values, alpha=.1, color="blue")
-    plt.grid()
-    plt.legend()
-    plt.title("Reward distributions", fontsize=17)
-    plt.ylabel("Gini coefficient", fontsize=14)
-    plt.xlabel("Time [epochs]", fontsize=14)
-    plt.savefig('simulation_gini_rewards.png')
+        history = history.drop(columns=['id']) \
+            .groupby(['epoch', 'simulation'])['stake'] \
+            .apply(gini_concentration_index) \
+            .reset_index(name='gini') \
+            .groupby('epoch') \
+            .agg({'gini': ['mean', 'std']}) \
+            .reset_index()
 
+        fig = plt.figure()
+        x = history['epoch']
+        y_mean = history['gini']['mean']
+        y_std_upper = y_mean + history['gini']['std']
+        y_std_lower = y_mean - history['gini']['std']
+        plt.plot(x, y_mean, label="mean ± std.dev", color='blue', linestyle="-")
+        plt.plot(x, y_std_upper, color='lightsteelblue', linestyle="-.", linewidth=0.5, alpha=0.1)
+        plt.plot(x, y_std_lower, color='lightsteelblue', linestyle="-.", linewidth=0.5, alpha=0.1)
+        plt.fill_between(x=x.values, y1=y_std_upper.values, y2=y_std_lower.values, alpha=.1, color="blue")
+        plt.grid()
+        plt.legend()
+        plt.title("Reward distributions", fontsize=17)
+        plt.ylabel("Gini concentration index", fontsize=14)
+        plt.xlabel("Time [epochs]", fontsize=14)
+        return fig
+
+    def __rewards_gini_ratio(self):
+        initial_stakes = self.history.query("epoch == 0").query("simulation == 0")
+        history = self.history.merge(initial_stakes, on='id', suffixes=('', '_'))\
+            .eval("stake = stake - stake_")\
+            .drop(columns=['stake_'])
+
+        history = history.drop(columns=['id']) \
+            .groupby(['epoch', 'simulation'])['stake'] \
+            .apply(gini_concentration_ratio) \
+            .reset_index(name='gini') \
+            .groupby('epoch') \
+            .agg({'gini': ['mean', 'std']}) \
+            .reset_index()
+
+        fig = plt.figure()
+        x = history['epoch']
+        y_mean = history['gini']['mean']
+        y_std_upper = y_mean + history['gini']['std']
+        y_std_lower = y_mean - history['gini']['std']
+        plt.plot(x, y_mean, label="mean ± std.dev", color='blue', linestyle="-")
+        plt.plot(x, y_std_upper, color='lightsteelblue', linestyle="-.", linewidth=0.5, alpha=0.1)
+        plt.plot(x, y_std_lower, color='lightsteelblue', linestyle="-.", linewidth=0.5, alpha=0.1)
+        plt.fill_between(x=x.values, y1=y_std_upper.values, y2=y_std_lower.values, alpha=.1, color="blue")
+        plt.grid()
+        plt.legend()
+        plt.title("Reward distributions", fontsize=17)
+        plt.ylabel("Gini concentration ratio", fontsize=14)
+        plt.xlabel("Time [epochs]", fontsize=14)
+        return fig
 
 def stake_histogram_normalized(history):
     max_epochs = history[0]["epoch"].max()
@@ -305,6 +335,3 @@ def dispersions_indexes(history):
     plt.xlabel("time [epochs]", fontsize=14)
     plt.savefig('stakes_var.png')
     logging.info("End dispersion_indexes")
-
-
-
