@@ -20,6 +20,7 @@ class DataVisualization:
         self.plots['rewards_gini_ratio'] = self.__rewards_gini_ratio()
         self.plots['lorenz_curves'] = self.__lorenz_curves_3d()
         self.plots['first_last_stakes_hist'] = self.__stake_histogram()
+        self.plots['stakes_for_agents'] = self.__stakes_for_agents()
         return self.plots
 
     def __stakes_gini_index(self):
@@ -121,7 +122,6 @@ class DataVisualization:
         plt.ylabel('N°agents', fontsize=11)
         plt.xlabel('stake', fontsize=11)
         plt.hist(self.history.query(f"simulation == {0}").query(f"epoch == {0}")["stake"], bins=10)
-
         plt.subplot(1, 2, 2)
         plt.grid(axis='y')
         plt.legend()
@@ -193,6 +193,32 @@ class DataVisualization:
         plt.ylabel("Gini concentration ratio", fontsize=14)
         plt.xlabel("Time [epochs]", fontsize=14)
         return fig
+
+    def __stakes_for_agents(self):
+        # TODO: std deviation of this ?
+        fig = plt.figure()
+        plt.subplot(1, 2, 1)
+        plt.grid(axis='y')
+        plt.legend()
+        plt.title("First epoch", fontsize=14)
+        plt.ylabel('stakes', fontsize=11)
+        plt.xlabel('agent id', fontsize=11)
+        plt.bar(self.history.query("epoch == 0 and simulation == 0")['id'].astype(str), self.history.query("epoch == 0 and simulation == 0")['stake'], color='maroon',
+                width=0.4)
+        plt.subplot(1, 2, 2)
+        plt.grid(axis='y')
+        plt.legend()
+        plt.title("Last epoch", fontsize=14)
+        plt.xlabel('agent id', fontsize=11)
+
+        last_epoch = self.history['epoch'].max()
+        # Media per ogni agente e std ?
+
+        plt.bar(self.history.query(f"epoch == {last_epoch} and simulation == 0")['id'].astype(str),
+                self.history.query(f"epoch == {last_epoch} and simulation == 0")['stake'], color='maroon',
+                width=0.4)
+        return fig
+
 
 def stake_histogram_normalized(history):
     max_epochs = history[0]["epoch"].max()

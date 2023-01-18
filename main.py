@@ -22,24 +22,12 @@ def main():
         os.makedirs(base_path)
 
     data_visualization = DataVisualization()
-
-    plots = data_visualization.run(history=optimums[Metrics.gini_stakes_diff]['min']['history'])
-    for plot_name in plots.keys():
-        if not os.path.exists(base_path / Metrics.gini_stakes_diff):
-            os.makedirs(base_path / Metrics.gini_stakes_diff)
-        plots[plot_name].savefig(base_path / Metrics.gini_stakes_diff / plot_name)
-
-    # score(history, metric='gini_diff')
-    # position_indexes(history)
-    # dispersions_indexes(history)
-    # visualization_gini_rcg(history)
-    # gini_on_stake_rewards(history)
-    # stake_histogram(history)
-    # prova_histogram_3d(history)
-    # lorenz_curves_3d(history)
-    # stake_histogram_normalized(history)
-    # stake_histogram_evolution(history)
-    # time_series_histogram(history)
+    for metric in metrics:
+        plots = data_visualization.run(history=optimums[metric]['min']['history'])
+        for plot_name in plots.keys():
+            if not os.path.exists(base_path / metric):
+                os.makedirs(base_path / metric)
+            plots[plot_name].savefig(base_path / metric / plot_name)
 
 
 if __name__ == "__main__":
