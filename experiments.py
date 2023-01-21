@@ -8,7 +8,7 @@ from metrics import Metrics
 def get_default_model_config():
     return {
         "n_agents": 10,
-        "n_epochs": 100,
+        "n_epochs": 10000,
         "initial_stake_volume": 1000.0,
         "block_reward": 1.0,
 
@@ -74,16 +74,19 @@ class Experiments:
         self.update_optimums()
 
     def run(self):
+        initial_stake_volume = self.current_model_config['initial_stake_volume']
         for stop_epoch_after_validator in (0, 2, 5):
             self.current_model_config['stop_epoch_after_validator'] = stop_epoch_after_validator
-            for stake_limit in (500, 2000, math.inf):
+            for stake_limit in (initial_stake_volume, math.inf):
                 self.current_model_config['stake_limit'] = stake_limit
                 for pos_type in ('random', 'weighted', 'inverse_weighted', 'log_weighted', 'dynamic_weighted'):
                     self.current_model_config['pos_type'] = pos_type
                     for initial_distribution in ('gini',):
                         self.current_model_config['initial_distribution'] = initial_distribution
                         for gini_initial_distribution in (.0, .2, .4, .6, .8, .99999):
+                            self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
                             self.run_experiment()
                     for initial_distribution in ('linear',):
+                        self.current_model_config['initial_distribution'] = initial_distribution
                         self.run_experiment()
         return self.optimums

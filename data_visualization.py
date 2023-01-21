@@ -297,6 +297,7 @@ def time_series_histogram(history):
 
 
 def position_indexes(history):
+    """ Using mean as position index """
     logging.info("Begin position_indexes")
     compact_history = [history[i].assign(simulation=i) for i in range(len(history))]
     compact_history = pd.concat(compact_history, ignore_index=True)
