@@ -1,5 +1,6 @@
 import logging
 
+import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import PercentFormatter
 
@@ -9,18 +10,20 @@ from simulator.model.statistics.statistics import *
 class DataVisualization:
 
     def __init__(self):
-        self.history = None
+        self.history: pd.DataFrame = pd.DataFrame()
         self.plots = {}
 
     def run(self, history: pd.DataFrame):
+        logging.info("Started run data visualization")
         self.history = history
         self.plots['stakes_gini_index'] = self.__stakes_gini_index()
-        self.plots['stakes_gini_ratio'] = self.__stakes_gini_ratio()
+        #self.plots['stakes_gini_ratio'] = self.__stakes_gini_ratio()
         self.plots['rewards_gini_index'] = self.__rewards_gini_index()
-        self.plots['rewards_gini_ratio'] = self.__rewards_gini_ratio()
+        #self.plots['rewards_gini_ratio'] = self.__rewards_gini_ratio()
         self.plots['lorenz_curves'] = self.__lorenz_curves_3d()
         self.plots['first_last_stakes_hist'] = self.__stake_histogram()
         self.plots['stakes_for_agents'] = self.__stakes_for_agents()
+        self.plots['mean_and_std_stakes'] = self.__mean_and_std_stakes()
         return self.plots
 
     def __stakes_gini_index(self):
@@ -203,8 +206,13 @@ class DataVisualization:
         plt.title("First epoch", fontsize=14)
         plt.ylabel('stakes', fontsize=11)
         plt.xlabel('agent id', fontsize=11)
-        plt.bar(self.history.query("epoch == 0 and simulation == 0")['id'].astype(str), self.history.query("epoch == 0 and simulation == 0")['stake'], color='maroon',
-                width=0.4)
+        first_epoch_ordered_by_id = self.history.query("epoch == 0 and simulation == 0").sort_values(by=['id'])
+        plt.bar(
+            first_epoch_ordered_by_id['id'].astype(str),
+            first_epoch_ordered_by_id['stake'],
+            color='maroon',
+            width=0.4
+        )
         plt.subplot(1, 2, 2)
         plt.grid(axis='y')
         plt.legend()
@@ -213,12 +221,41 @@ class DataVisualization:
 
         last_epoch = self.history['epoch'].max()
         # Media per ogni agente e std ?
-
-        plt.bar(self.history.query(f"epoch == {last_epoch} and simulation == 0")['id'].astype(str),
-                self.history.query(f"epoch == {last_epoch} and simulation == 0")['stake'], color='maroon',
-                width=0.4)
+        last_epoch_ordered_by_id = self.history.query(f"epoch == {last_epoch} and simulation == 0").sort_values(by=['id'])
+        plt.bar(last_epoch_ordered_by_id['id'].astype(str),
+                last_epoch_ordered_by_id['stake'],
+                color='maroon',
+                width=0.4
+                )
         return fig
 
+    def __mean_and_std_stakes(self):
+        """
+        Calculate std of each epoch, then get the mean of each epoch std by simulations.
+        """
+        epochs_std = self.history.groupby(['simulation', 'epoch'])['stake'] \
+            .std() \
+            .groupby(['epoch']) \
+            .mean()\
+            .reset_index()
+        epochs_mean = self.history.query('simulation == 0').groupby(['epoch'])['stake'] \
+            .mean()\
+            .reset_index()
+        fig = plt.figure()
+        x = epochs_std['epoch']
+        y_mean = epochs_mean['stake']
+        y_std_upper = y_mean + epochs_std['stake']
+        y_std_lower = y_mean - epochs_std['stake']
+        plt.plot(x, y_mean, label="mean ± std.dev", color='blue', linestyle="-")
+        plt.plot(x, y_std_upper, color='lightsteelblue', linestyle="-.", linewidth=0.5, alpha=0.1)
+        plt.plot(x, y_std_lower, color='lightsteelblue', linestyle="-.", linewidth=0.5, alpha=0.1)
+        plt.fill_between(x=x.values, y1=y_std_upper.values, y2=y_std_lower.values, alpha=.1, color="blue")
+        plt.grid()
+        plt.legend()
+        plt.title("Stake mean and std", fontsize=17)
+        plt.ylabel("Mean", fontsize=14)
+        plt.xlabel("Time [epochs]", fontsize=14)
+        return fig
 
 def stake_histogram_normalized(history):
     max_epochs = history[0]["epoch"].max()

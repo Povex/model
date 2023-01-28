@@ -25,6 +25,7 @@ class ModelConfig(metaclass=Singleton):
     gini_threshold: float
     log_weighted_base: float
     log_shift_factor: float
+    dynamic_weighted_theta: float
     malicious_node_probability: float
     percent_stake_penalty: float
     stop_epoch_after_malicious: int

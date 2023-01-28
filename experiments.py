@@ -5,10 +5,11 @@ import simulator as sim
 from metrics import Metrics
 
 
+
 def get_default_model_config():
     return {
         "n_agents": 10,
-        "n_epochs": 10000,
+        "n_epochs": 1000,
         "initial_stake_volume": 1000.0,
         "block_reward": 1.0,
 
@@ -26,6 +27,7 @@ def get_default_model_config():
         "gini_threshold": 0.8,
         "log_weighted_base": 2,
         "log_shift_factor": 1,
+        "dynamic_weighted_theta": 0.5,
 
         "min_coin_age": 0,
         "max_coin_age": 999999999999999,
@@ -90,3 +92,5 @@ class Experiments:
                         self.current_model_config['initial_distribution'] = initial_distribution
                         self.run_experiment()
         return self.optimums
+
+

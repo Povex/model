@@ -27,7 +27,6 @@ class DynamicWeightedCoinAge(CoinAgePoS):
 
     def select_validator(self):
         gini = gini_irc([a.get_stake() for a in self.agents])
-        print(gini)
         if gini > self.conf.gini_threshold:
             return self.inverse_weighted_coin_age()
         return self.weighted_coin_age()

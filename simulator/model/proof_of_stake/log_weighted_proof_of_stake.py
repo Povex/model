@@ -3,7 +3,6 @@ import random
 
 from simulator.model.proof_of_stake.proof_of_stake import PoS
 
-
 class LogWeightedPoS(PoS):
 
     def __init__(self):

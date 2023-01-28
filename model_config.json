@@ -1,7 +1,7 @@
 {
     "n_agents": 10,
-    "n_epochs": 20000,
-    "pos_type": "random",
+    "n_epochs": 50000,
+    "pos_type": "dynamic_weighted",
     "initial_distribution": "gini",
     "gini_initial_distribution": 0.7,
     "log_weighted_base": 1.0,
@@ -21,6 +21,7 @@
     "initial_stake_volume": 1000.0,
     "block_reward": 1.0,
     "gini_threshold": 0.7,
+    "dynamic_weighted_theta": 0.4,
     "malicious_node_probability": 0.0,
     "percent_stake_penalty": 0.2,
     "stop_epoch_after_malicious": 5,

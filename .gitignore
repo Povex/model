@@ -161,3 +161,4 @@ cython_debug/
 
 # CUSTOM
 results/
+random_pos_results/

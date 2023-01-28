@@ -1,7 +1,10 @@
 import random
 
+import numpy as np
+
 from simulator.model.proof_of_stake.proof_of_stake import PoS
-from simulator.model.statistics.statistics import gini_irc
+from simulator.model.statistics.statistics import gini_concentration_index
+from scipy.optimize import minimize
 
 
 class DynamicWeighted(PoS):
@@ -14,17 +17,34 @@ class DynamicWeighted(PoS):
         super().__init__()
         self.create_agents()
 
-    def weighted(self):
-        agents = list(self.agents.difference(self.agents_stop_epochs))
-        return random.choices(agents, weights=[a.stake for a in agents])[0]
+    def linear_function(self, x1, y1, x2, y2):
+        m = float(y2 - y1) / (x2 - x1)
+        q = y1 - (m * x1)
+        return m, q
 
-    def inverse_weighted(self):
+    def theta_function(self, x):
+        m, q = self.linear_function(0.5, 0.005, 0.7, 0.1)  # reduction gini to 0.5
+        return m * x + q
+
+    def reduce_gini_transform(self, data, theta):
+        m, q = self.linear_function(0.0, theta, 1, 1 - theta)
+        return m * data + q
+
+    def weights_transformation(self, weights, original_gini):
+        theta = 0
+        if original_gini >= self.conf.gini_threshold:
+            theta = self.theta_function(original_gini)
+        transformed_data = self.reduce_gini_transform(weights, theta)
+        # data = data / data.sum()  # data already normalized by the random library
+        return transformed_data
+
+    def dynamic_gini_weighted(self):
         agents = list(self.agents.difference(self.agents_stop_epochs))
-        inverse_stakes = [(self.stake_volume - a.stake) / self.stake_volume for a in agents]
-        return random.choices(agents, weights=inverse_stakes)[0]
+        data = np.array([a.stake for a in self.agents])
+        weights = data / data.sum()
+        gini = gini_concentration_index(weights)
+        transformed_data = self.weights_transformation(weights, gini)
+        return random.choices(agents, weights=transformed_data)[0]
 
     def select_validator(self):
-        gini = gini_irc([a.stake for a in self.agents])  # TODO: use np version
-        if gini > self.conf.gini_threshold:
-            return self.inverse_weighted()
-        return self.weighted()
+        return self.dynamic_gini_weighted()
