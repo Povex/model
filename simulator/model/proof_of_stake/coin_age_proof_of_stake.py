@@ -1,9 +1,8 @@
 import logging
+import math
 import random
 
 from simulator.model.proof_of_stake.proof_of_stake import PoS
-from simulator.model.initial_distributions import Distributions
-from simulator.model.agents.node_agent_v2 import NodeAgentV2
 
 
 class CoinAgePoS(PoS):
@@ -12,31 +11,25 @@ class CoinAgePoS(PoS):
         super().__init__()
         self.create_agents()
 
-    def create_agents(self):
-        stakes = Distributions.generate_distribution(self.conf.initial_distribution,
-                                                     self.conf.n_agents,
-                                                     self.conf.initial_stake_volume)
-        for i in range(self.conf.n_agents):
-            a = NodeAgentV2(i)
-            a.add_stake(stakes[i], 0)
-            self.agents.add(a)
-            self.stake_volume += stakes[i]
-        self.agents = frozenset(self.agents)
+    def update_coin_ages(self):
+        for a in self.agents:
+            a.coin_age += 1
+
+    def step(self):
+        self.epoch += 1
+        self.update_stop_epochs()
+        self.update_coin_ages()
+        self.consensus()
         self.update_history()
 
     def select_validator(self):
-        agents = list(self.agents.difference(self.agents_stop_epochs))
-        return random.choices(agents,
-                              weights=[a.get_stake_weight(
-                                  self.epoch,
-                                  self.conf.min_coin_age,
-                                  self.conf.max_coin_age
-                              ) for a in agents])[0]
+        return random.choices(list(self.agents), weights=[a.get_coin_age_weight() for a in self.agents])[0]
 
     def consensus(self):
         try:
             validator = self.select_validator()
         except IndexError:
+            logging.info(f"Validator not found")
             return
 
         p = self.conf.malicious_node_probability
@@ -45,24 +38,21 @@ class CoinAgePoS(PoS):
         if validator.is_malicious:
             logging.info(f"Malicious node found with id {validator.unique_id} at epoch {self.epoch}")
             stake_penalty = validator.stake * self.conf.percent_stake_penalty
-            validator.stake.remove_stake(stake_penalty)
-            self.stake_volume -= stake_penalty
+            validator.stake -= stake_penalty
+            self.conf.initial_stake_volume -= stake_penalty
+
             validator.stop_epochs += self.conf.stop_epoch_after_malicious
             validator.is_malicious = False
 
         else:
             logging.debug(f"Validator found with id {validator.unique_id} at epoch {self.epoch}")
             validator.stop_epochs += self.conf.stop_epoch_after_validator
-            old_stake = validator.get_stake()
-            validator.add_stake(self.conf.block_reward, self.epoch)
-            current_stake = validator.get_stake()
-            if current_stake > self.conf.stake_limit:
-                validator.remove_stake(current_stake - self.conf.stake_limit)
-            self.stake_volume += (validator.get_stake() - old_stake)
-            # Reset the age of the coins
-            for coins in validator.stake:
-                coins.age = self.epoch
+            validator.coin_age -= math.floor(self.conf.coin_age_reduction_factor * validator.coin_age)
+            old_stake = validator.stake
+            validator.stake += self.get_block_reward()
+            if validator.stake > self.conf.stake_limit:
+                validator.stake = self.conf.stake_limit
+            self.stake_volume += (validator.stake - old_stake)
 
         if validator.stop_epochs > 0:
             self.agents_stop_epochs.add(validator)
-

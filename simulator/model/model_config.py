@@ -21,8 +21,10 @@ class ModelConfig(metaclass=Singleton):
     gini_initial_distribution: float
     custom_distribution: List[float]
     initial_stake_volume: float
-    block_reward: float
+    reward_type: str
+    total_rewards: float
     gini_threshold: float
+    coin_age_reduction_factor: float
     log_weighted_base: float
     log_shift_factor: float
     dynamic_weighted_theta: float

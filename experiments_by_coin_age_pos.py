@@ -1,13 +1,14 @@
 import json
 import logging
+import math
 import os
-import random
+import shutil
 from pathlib import Path
-
-import numpy as np
+from typing import List
 
 import simulator as sim
 from data_visualization import DataVisualization
+from metrics import Metrics
 from matplotlib import pyplot as plt
 
 from simulator.model.statistics.statistics import gini_concentration_index
@@ -16,9 +17,9 @@ from simulator.model.statistics.statistics import gini_concentration_index
 def get_default_model_config():
     return {
         "n_agents": 10,
-        "n_epochs": 100,
+        "n_epochs": 50000,
         "initial_stake_volume": 1000.0,
-        "total_rewards": 100,
+        "total_rewards": 50000.0,
         'reward_type': 'constant',
 
         "stop_epoch_after_validator": 0,
@@ -28,7 +29,7 @@ def get_default_model_config():
         "stop_epoch_after_malicious": 5,
         "percent_stake_penalty": 0.2,
 
-        "pos_type": "coin_age",
+        "pos_type": "weighted",
         "initial_distribution": "polynomial",
         "gini_initial_distribution": 0.3,
         "custom_distribution": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -36,7 +37,6 @@ def get_default_model_config():
         "log_weighted_base": 2,
         "log_shift_factor": 1,
         "dynamic_weighted_theta": 0.5,
-        "coin_age_reduction_factor": 0.2,
 
         "min_coin_age": 0,
         "max_coin_age": 999999999999999,
@@ -46,14 +46,15 @@ def get_default_model_config():
     }
 
 
-class ExperimentsByPoS:
+class ExperimentsByWeightedPos:
     """
     This class is utilized for analyzing individual PoS consensus mechanisms.
     Specifically, the PoS mechanism is fixed, while other parameters utilized in that PoS mechanism are varied.
     """
 
-    def __init__(self, n_simulations=4, base_path=Path('results/pos_results')):
+    def __init__(self, metrics: List[str], n_simulations=4, base_path=Path('results/weighted_pos_results')):
         super().__init__()
+        self.metrics = metrics
         self.current_model_config = get_default_model_config()
         sim.ModelConfig(self.current_model_config)
         self.scores = None
@@ -75,7 +76,7 @@ class ExperimentsByPoS:
             .agg({'gini': ['mean', 'std']}) \
             .reset_index()
         self.epochs = ginis['epoch']
-        return ginis['gini']['mean'], ginis['gini']['std']
+        return ginis['gini']['mean']
 
     def calculate_ginis_rewards(self):
         initial_stakes = self.history.query("epoch == 0").query("simulation == 0")
@@ -89,22 +90,13 @@ class ExperimentsByPoS:
             .groupby('epoch') \
             .agg({'gini': ['mean', 'std']}) \
             .reset_index()
-        return ginis['gini']['mean'], ginis['gini']['std']
+        return ginis['gini']['mean']
 
     def plot_ginis_by_initial_distribution(self):
-        cmap = plt.get_cmap('viridis')
-        colors = cmap(np.linspace(0, 1, len(self.ginis_by_initial_distributions)))
         fig = plt.figure()
         x = self.epochs
-        for i, y in enumerate(self.ginis_by_initial_distributions):
-            color = colors[i]
-            y_mean = y[1][0]
-            y_std_upper = y_mean + y[1][1]
-            y_std_lower = y_mean - y[1][1]
-            plt.plot(x, y_mean, label=f"Initial Gini: {y[0]}", linestyle="-", color=color)
-            plt.plot(x, y_std_upper, linestyle="-.", linewidth=0.5, alpha=0.1)
-            plt.plot(x, y_std_lower, linestyle="-.", linewidth=0.5, alpha=0.1)
-            plt.fill_between(x=x.values, y1=y_std_upper.values, y2=y_std_lower.values, alpha=.1, color=color)
+        for y in self.ginis_by_initial_distributions:
+            plt.plot(x, y[1], label=f"Initial Gini: {y[0]}", linestyle="-")
         plt.grid()
         plt.legend(loc='upper right')
         plt.title("Stake distributions", fontsize=17)
@@ -113,19 +105,10 @@ class ExperimentsByPoS:
         fig.savefig(self.base_path / 'ginis_by_initial_distributions')
 
     def plot_ginis_rewards_by_initial_distribution(self):
-        cmap = plt.get_cmap('viridis')
-        colors = cmap(np.linspace(0, 1, len(self.ginis_rewards_by_initial_distributions)))
         fig = plt.figure()
         x = self.epochs
-        for i, y in enumerate(self.ginis_rewards_by_initial_distributions):
-            color = colors[i]
-            y_mean = y[1][0]
-            y_std_upper = y_mean + y[1][1]
-            y_std_lower = y_mean - y[1][1]
-            plt.plot(x, y_mean, label=f"Initial Gini: {y[0]}", linestyle="-", color=color)
-            plt.plot(x, y_std_upper, linestyle="-.", linewidth=0.5, alpha=0.1)
-            plt.plot(x, y_std_lower, linestyle="-.", linewidth=0.5, alpha=0.1)
-            plt.fill_between(x=x.values, y1=y_std_upper.values, y2=y_std_lower.values, alpha=.1, color=color)
+        for y in self.ginis_rewards_by_initial_distributions:
+            plt.plot(x, y[1], label=f"Initial Gini: {y[0]}", linestyle="-")
         plt.grid()
         plt.legend(loc='upper right')
         plt.title("Rewards distributions", fontsize=17)
@@ -138,10 +121,10 @@ class ExperimentsByPoS:
         logging.info(f"Current counter: {self.experiment_counter}")
         sim.ModelConfig().set_model_config(self.current_model_config)
         self.history = sim.ModelRunner.run(n_simulations=self.n_simulations)
-
-        self.ginis_by_initial_distributions.append((round(sim.ModelConfig().gini_initial_distribution, 1), self.calculate_ginis()))
-        self.ginis_rewards_by_initial_distributions.append((round(sim.ModelConfig().gini_initial_distribution, 1), self.calculate_ginis_rewards()))
-
+        self.ginis_by_initial_distributions.append(
+            (round(sim.ModelConfig().gini_initial_distribution, 1), self.calculate_ginis()))
+        self.ginis_rewards_by_initial_distributions.append(
+            (round(sim.ModelConfig().gini_initial_distribution, 1), self.calculate_ginis_rewards()))
         # self.scores = Metrics(self.history).scores(self.metrics)
         if not os.path.exists(self.base_path / str(self.experiment_counter)):
             os.makedirs(self.base_path / str(self.experiment_counter))
@@ -151,8 +134,8 @@ class ExperimentsByPoS:
         for plot_name in plots.keys():
             plots[plot_name].savefig(self.base_path / str(self.experiment_counter) / plot_name)
 
-    def run_coin_age_experiments(self):
-        self.current_model_config['pos_type'] = 'coin_age'
+    def run_weighted_pos_experiments(self):
+        self.current_model_config['pos_type'] = 'weighted'
         self.current_model_config['initial_distribution'] = 'gini'
         for reward_function in ('constant',): #'geometric'):
             self.current_model_config['reward_type'] = reward_function
@@ -163,15 +146,12 @@ class ExperimentsByPoS:
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    pos_type = "coin_age"
-    match pos_type:
-        case "coin_age":
-            pos_experiments = ExperimentsByPoS(base_path=Path('results/coin_age_results'))
-            pos_experiments.run_coin_age_experiments()
-        case _:
-            pos_experiments = ExperimentsByPoS()
-    pos_experiments.plot_ginis_by_initial_distribution()
-    pos_experiments.plot_ginis_rewards_by_initial_distribution()
+    metrics = [Metrics.gini_stakes_diff, Metrics.gini_rewards_diff, Metrics.slope_gini_stakes,
+               Metrics.slope_gini_rewards]
+    random_pos_experiments = ExperimentsByWeightedPos(metrics)
+    random_pos_experiments.run_weighted_pos_experiments()
+    random_pos_experiments.plot_ginis_by_initial_distribution()
+    random_pos_experiments.plot_ginis_rewards_by_initial_distribution()
 
 
 if __name__ == "__main__":

@@ -11,19 +11,21 @@ class DataVisualization:
 
     def __init__(self):
         self.history: pd.DataFrame = pd.DataFrame()
+        self.history_group_by_epoch_simulation = None
+        self.history_minus_initial_stakes = None
         self.plots = {}
 
     def run(self, history: pd.DataFrame):
         logging.info("Started run data visualization")
         self.history = history
         self.plots['stakes_gini_index'] = self.__stakes_gini_index()
-        #self.plots['stakes_gini_ratio'] = self.__stakes_gini_ratio()
+        # self.plots['stakes_gini_ratio'] = self.__stakes_gini_ratio()
         self.plots['rewards_gini_index'] = self.__rewards_gini_index()
-        #self.plots['rewards_gini_ratio'] = self.__rewards_gini_ratio()
+        # self.plots['rewards_gini_ratio'] = self.__rewards_gini_ratio()
         self.plots['lorenz_curves'] = self.__lorenz_curves_3d()
         self.plots['first_last_stakes_hist'] = self.__stake_histogram()
         self.plots['stakes_for_agents'] = self.__stakes_for_agents()
-        self.plots['mean_and_std_stakes'] = self.__mean_and_std_stakes()
+        # self.plots['mean_and_std_stakes'] = self.__mean_and_std_stakes()
         return self.plots
 
     def __stakes_gini_index(self):
@@ -221,9 +223,11 @@ class DataVisualization:
 
         last_epoch = self.history['epoch'].max()
         # Media per ogni agente e std ?
-        last_epoch_ordered_by_id = self.history.query(f"epoch == {last_epoch} and simulation == 0").sort_values(by=['id'])
-        plt.bar(last_epoch_ordered_by_id['id'].astype(str),
-                last_epoch_ordered_by_id['stake'],
+        last_epoch_mean_by_agent = self.history.loc[self.history['epoch'] == last_epoch].groupby(['id', 'epoch'])[
+            "stake"].mean().reset_index().sort_values(['id'])
+
+        plt.bar(last_epoch_mean_by_agent['id'].astype(str),
+                last_epoch_mean_by_agent['stake'],
                 color='maroon',
                 width=0.4
                 )
@@ -236,10 +240,10 @@ class DataVisualization:
         epochs_std = self.history.groupby(['simulation', 'epoch'])['stake'] \
             .std() \
             .groupby(['epoch']) \
-            .mean()\
+            .mean() \
             .reset_index()
         epochs_mean = self.history.query('simulation == 0').groupby(['epoch'])['stake'] \
-            .mean()\
+            .mean() \
             .reset_index()
         fig = plt.figure()
         x = epochs_std['epoch']
@@ -256,6 +260,7 @@ class DataVisualization:
         plt.ylabel("Mean", fontsize=14)
         plt.xlabel("Time [epochs]", fontsize=14)
         return fig
+
 
 def stake_histogram_normalized(history):
     max_epochs = history[0]["epoch"].max()

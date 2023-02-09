@@ -29,7 +29,7 @@ class ModelRunner:
                 return DynamicWeighted()
             case "inverse_weighted":
                 return InverseWeightedPoS()
-            case "weighted_coin_age":
+            case "coin_age":
                 return CoinAgePoS()
             case "inverse_weighted_coin_age":
                 return DynamicWeightedCoinAge()

@@ -1,5 +1,6 @@
 import logging
 import random
+from typing import Set
 
 import pandas as pd
 
@@ -14,7 +15,7 @@ class PoS:
 
     def __init__(self):
         self.conf = ModelConfig()
-        self.agents = set()
+        self.agents: Set[NodeAgentV1] = set()
         self.stake_volume = 0
         self.epoch = 0
         self.history = []
@@ -56,6 +57,14 @@ class PoS:
     def select_validator(self):
         pass
 
+    def get_block_reward(self):
+        if self.conf.reward_type == "constant":
+            return self.conf.total_rewards/self.conf.n_epochs
+        if self.conf.reward_type == "geometric":
+            return (1 + self.conf.total_rewards) ** (self.epoch / self.conf.n_epochs) \
+                - (1 + self.conf.total_rewards) ** ((self.epoch - 1) / self.conf.n_epochs)
+        raise Exception("Reward function must be 'constant' or 'geometric'.")
+
     def consensus(self):
         try:
             validator = self.select_validator()
@@ -72,14 +81,14 @@ class PoS:
             validator.stake -= stake_penalty
             self.conf.initial_stake_volume -= stake_penalty
 
-            validator.stop_epochs += self.model_config.stop_epoch_after_malicious
+            validator.stop_epochs += self.conf.stop_epoch_after_malicious
             validator.is_malicious = False
 
         else:
             logging.debug(f"Validator found with id {validator.unique_id} at epoch {self.epoch}")
             validator.stop_epochs += self.conf.stop_epoch_after_validator
             old_stake = validator.stake
-            validator.stake += self.conf.block_reward
+            validator.stake += self.get_block_reward()
             if validator.stake > self.conf.stake_limit:
                 validator.stake = self.conf.stake_limit
             self.stake_volume += (validator.stake - old_stake)
