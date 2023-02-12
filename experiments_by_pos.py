@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-import random
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -16,9 +16,9 @@ from simulator.model.statistics.statistics import gini_concentration_index
 def get_default_model_config():
     return {
         "n_agents": 10,
-        "n_epochs": 100,
+        "n_epochs": 10000,
         "initial_stake_volume": 1000.0,
-        "total_rewards": 100,
+        "total_rewards": 10000,
         'reward_type': 'constant',
 
         "stop_epoch_after_validator": 0,
@@ -36,7 +36,7 @@ def get_default_model_config():
         "log_weighted_base": 2,
         "log_shift_factor": 1,
         "dynamic_weighted_theta": 0.5,
-        "coin_age_reduction_factor": 0.2,
+        "coin_age_reduction_factor": 0,
 
         "min_coin_age": 0,
         "max_coin_age": 999999999999999,
@@ -139,8 +139,10 @@ class ExperimentsByPoS:
         sim.ModelConfig().set_model_config(self.current_model_config)
         self.history = sim.ModelRunner.run(n_simulations=self.n_simulations)
 
-        self.ginis_by_initial_distributions.append((round(sim.ModelConfig().gini_initial_distribution, 1), self.calculate_ginis()))
-        self.ginis_rewards_by_initial_distributions.append((round(sim.ModelConfig().gini_initial_distribution, 1), self.calculate_ginis_rewards()))
+        self.ginis_by_initial_distributions.append(
+            (round(sim.ModelConfig().gini_initial_distribution, 1), self.calculate_ginis()))
+        self.ginis_rewards_by_initial_distributions.append(
+            (round(sim.ModelConfig().gini_initial_distribution, 1), self.calculate_ginis_rewards()))
 
         # self.scores = Metrics(self.history).scores(self.metrics)
         if not os.path.exists(self.base_path / str(self.experiment_counter)):
@@ -151,8 +153,36 @@ class ExperimentsByPoS:
         for plot_name in plots.keys():
             plots[plot_name].savefig(self.base_path / str(self.experiment_counter) / plot_name)
 
+    def run_random_pos_experiments(self):
+        self.current_model_config['pos_type'] = 'random'
+        self.current_model_config['initial_distribution'] = 'gini'
+        for reward_function in ('constant',):  # 'geometric'):
+            self.current_model_config['reward_type'] = reward_function
+            for gini_initial_distribution in (.0, .2, .4, .6, .8, .999999999):
+                self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
+                self.run_experiment()
+
     def run_coin_age_experiments(self):
         self.current_model_config['pos_type'] = 'coin_age'
+        self.current_model_config['initial_distribution'] = 'gini'
+        for reward_function in ('constant',):  # 'geometric'):
+            self.current_model_config['reward_type'] = reward_function
+            for gini_initial_distribution in (.0, .2, .4, .6, .8, .999999999):
+                self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
+                self.run_experiment()
+
+    def run_dynamic_weighted_experiments(self):
+        self.current_model_config['pos_type'] = 'dynamic_weighted'
+        self.current_model_config['initial_distribution'] = 'gini'
+        self.current_model_config['gini_threshold'] = 0.4
+        for reward_function in ('constant',):  # 'geometric'):
+            self.current_model_config['reward_type'] = reward_function
+            for gini_initial_distribution in (.0, .2, .4, .6, .8, .999999999):
+                self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
+                self.run_experiment()
+
+    def run_weighted_pos_experiments(self):
+        self.current_model_config['pos_type'] = 'weighted'
         self.current_model_config['initial_distribution'] = 'gini'
         for reward_function in ('constant',): #'geometric'):
             self.current_model_config['reward_type'] = reward_function
@@ -163,13 +193,27 @@ class ExperimentsByPoS:
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    pos_type = "coin_age"
+    try:
+        pos_type = sys.argv[1]
+    except:
+        raise Exception("Insert a pos type in [coin_age, dynamic_weighted, random, weighted]")
+
+    logging.info("Executing" + pos_type + "PoS experiments")
     match pos_type:
         case "coin_age":
             pos_experiments = ExperimentsByPoS(base_path=Path('results/coin_age_results'))
             pos_experiments.run_coin_age_experiments()
+        case "dynamic_weighted":
+            pos_experiments = ExperimentsByPoS(base_path=Path('results/dynamic_weighted_results'))
+            pos_experiments.run_dynamic_weighted_experiments()
+        case "random":
+            pos_experiments = ExperimentsByPoS(base_path=Path('results/random_results'))
+            pos_experiments.run_random_pos_experiments()
+        case "weighted":
+            pos_experiments = ExperimentsByPoS(base_path=Path('results/weighted_results'))
+            pos_experiments.run_weighted_pos_experiments()
         case _:
-            pos_experiments = ExperimentsByPoS()
+            raise Exception("Insert a pos type in [coin_age, dynamic_weighted, random, weighted]")
     pos_experiments.plot_ginis_by_initial_distribution()
     pos_experiments.plot_ginis_rewards_by_initial_distribution()
 

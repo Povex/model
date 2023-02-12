@@ -47,7 +47,7 @@ class CoinAgePoS(PoS):
         else:
             logging.debug(f"Validator found with id {validator.unique_id} at epoch {self.epoch}")
             validator.stop_epochs += self.conf.stop_epoch_after_validator
-            validator.coin_age -= math.floor(self.conf.coin_age_reduction_factor * validator.coin_age)
+            validator.coin_age -= math.ceil(self.conf.coin_age_reduction_factor * validator.coin_age)
             old_stake = validator.stake
             validator.stake += self.get_block_reward()
             if validator.stake > self.conf.stake_limit:
