@@ -50,7 +50,7 @@ class DataVisualization:
         plt.plot(x, y_std_lower, color='lightsteelblue', linestyle="-.", linewidth=0.5, alpha=0.1)
         plt.fill_between(x=x.values, y1=y_std_upper.values, y2=y_std_lower.values, alpha=.1, color="blue")
         plt.grid()
-        plt.legend()
+        plt.legend(framealpha=0.5)
         plt.title("Stake distributions", fontsize=17)
         plt.ylabel("Gini concentration index", fontsize=14)
         plt.xlabel("Time [epochs]", fontsize=14)

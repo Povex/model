@@ -34,7 +34,12 @@ class Metrics:
         return rewards_last_epoch[0]
 
     def get_gini_stakes_diff(self):
-
+        """
+        If the difference is positive then the inequality increased
+        If the difference is 0 then the optimum is reached
+        If the difference is negative then the inequality decreased
+        :return: Difference between last epoch Gini and first epoch Gini
+        """
         gini_first_epoch = self.history.query(f'epoch == {self.first_epoch}') \
             .drop(columns=['id', 'epoch']) \
             .groupby(['simulation'])["stake"] \

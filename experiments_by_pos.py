@@ -16,7 +16,7 @@ from simulator.model.statistics.statistics import gini_concentration_index
 def get_default_model_config():
     return {
         "n_agents": 10,
-        "n_epochs": 10000,
+        "n_epochs": 1000,
         "initial_stake_volume": 1000.0,
         "total_rewards": 10000,
         'reward_type': 'constant',
@@ -106,7 +106,7 @@ class ExperimentsByPoS:
             plt.plot(x, y_std_lower, linestyle="-.", linewidth=0.5, alpha=0.1)
             plt.fill_between(x=x.values, y1=y_std_upper.values, y2=y_std_lower.values, alpha=.1, color=color)
         plt.grid()
-        plt.legend(loc='upper right')
+        plt.legend(loc='upper right', framealpha=0.2)
         plt.title("Stake distributions", fontsize=17)
         plt.ylabel("Gini concentration index", fontsize=14)
         plt.xlabel("Time [epochs]", fontsize=14)
@@ -184,7 +184,7 @@ class ExperimentsByPoS:
     def run_weighted_pos_experiments(self):
         self.current_model_config['pos_type'] = 'weighted'
         self.current_model_config['initial_distribution'] = 'gini'
-        for reward_function in ('constant',): #'geometric'):
+        for reward_function in ('geometric',): #'geometric'):
             self.current_model_config['reward_type'] = reward_function
             for gini_initial_distribution in (.0, .2, .4, .6, .8, .999999999):
                 self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
