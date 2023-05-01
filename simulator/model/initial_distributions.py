@@ -36,7 +36,7 @@ class Distributions:
             return lambda x: m * x
 
         max_r = (n - 1) / 2
-        r = gini * max_r
+        r = gini * max_r # Mantengo R
         prop = ((n - 1) / n) * ((max_r - r) / max_r)
         lc = lorenz_curve(0, 0, (n - 1) / n, prop)
         q = [lc(i / n) for i in range(1, n)] + [1]

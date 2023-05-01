@@ -9,8 +9,8 @@ from scipy.optimize import minimize
 
 class DynamicWeighted(PoS):
     """
-    Il sistema dinamico permette di modificare il modello al variare di certe condizioni, per esempio al raggiungimento
-    di una soglia nell'indice di Gini.
+    Il sistema dinamico permette di modificare il modello al variare di certe condizioni,
+     per esempio al raggiungimento di una soglia nell'indice di Gini.
      """
 
     def __init__(self):

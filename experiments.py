@@ -2,8 +2,6 @@ import math
 import sys
 
 import simulator as sim
-import pickle
-
 import os
 import shutil
 from pathlib import Path
@@ -21,7 +19,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 def get_default_model_config():
     return {
         "n_agents": 10,
-        "n_epochs": 10000,
+        "n_epochs": 10,
         "initial_stake_volume": 1000.0,
         "total_rewards": 10000,
         'reward_type': 'constant',
@@ -52,7 +50,10 @@ def get_default_model_config():
 
 
 class Experiments:
-
+    """
+    Experiments can run models and simulations for different input paramentes.
+    Can be used to generate a metric analysis. based on Gini concentration index.
+    """
     def __init__(self, metrics: List[str], n_simulations=4):
         super().__init__()
         self.metrics = metrics
@@ -107,7 +108,7 @@ class Experiments:
         initial_stake_volume = self.current_model_config['initial_stake_volume']
         for stop_epoch_after_validator in (0,):  # 2, 5):
             self.current_model_config['stop_epoch_after_validator'] = stop_epoch_after_validator
-            for stake_limit in (initial_stake_volume, math.inf):
+            for stake_limit in (math.inf, ):
                 self.current_model_config['stake_limit'] = stake_limit
                 for pos_type in ('random', 'weighted', 'coin_age', 'dynamic_weighted'):
                     self.current_model_config['pos_type'] = pos_type
@@ -115,27 +116,65 @@ class Experiments:
                         self.current_model_config['initial_distribution'] = initial_distribution
                         for gini_initial_distribution in (.0, .2, .4, .6, .8, .99999):
                             self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
-                            self.run_experiment()
-                    for initial_distribution in ('linear',):
-                        self.current_model_config['initial_distribution'] = initial_distribution
-                        self.run_experiment()
+                            for reward_type in ('constant', 'geometric'):
+                                self.current_model_config['reward_type'] = reward_type
+                                for total_reward in (100, 1000, 10_000, 100_000, 1_000_000):  # Varying load factor c in 1.01, 0.1, 1, 10, 100
+                                    self.current_model_config['total_rewards'] = total_reward
+                                    self.run_experiment()
         return self.optimums
 
     def run_random(self):
         self.current_model_config['pos_type'] = 'random'
         self.current_model_config['initial_distribution'] = 'gini'
         initial_stake_volume = self.current_model_config['initial_stake_volume']
-        for stop_epoch_after_validator in (0, 2, 5):
-            self.current_model_config['stop_epoch_after_validator'] = stop_epoch_after_validator
-            for stake_limit in (initial_stake_volume, math.inf):
-                self.current_model_config['stake_limit'] = stake_limit
-                for reward_type in ('constant', 'geometric'):
-                    self.current_model_config['reward_type'] = reward_type
-                    for total_reward in (1000, 10_000, 100_000):  # Varying load factor c in 0.1, 1, 10
-                        self.current_model_config['total_rewards'] = total_reward
-                        for gini_initial_distribution in (.0, .2, .4, .6, .8, .99999):
-                            self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
-                            self.run_experiment()
+        for stake_limit in (initial_stake_volume, math.inf):
+            self.current_model_config['stake_limit'] = stake_limit
+            for reward_type in ('constant', 'geometric'):
+                self.current_model_config['reward_type'] = reward_type
+                for total_reward in (
+                        100, 1000, 10_000, 100_000, 1_000_000):  # Varying load factor c in 1.01, 0.1, 1, 10, 100
+                    self.current_model_config['total_rewards'] = total_reward
+                    for gini_initial_distribution in (.0, .2, .4, .6, .8, .99999):
+                        self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
+                        self.run_experiment()
+
+    def run_weighted(self):
+        self.current_model_config['pos_type'] = 'weighted'
+        self.current_model_config['initial_distribution'] = 'gini'
+        for reward_type in ('constant', 'geometric'):
+            self.current_model_config['reward_type'] = reward_type
+            for total_reward in (
+                    100, 1000, 10_000, 100_000, 1_000_000):  # Varying load factor c in 0.01, 0.1, 1, 10, 100
+                self.current_model_config['total_rewards'] = total_reward
+                for gini_initial_distribution in (.0, .2, .4, .6, .8, .99999):
+                    self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
+                    self.run_experiment()
+
+    def run_coin_age(self):
+        self.current_model_config['pos_type'] = 'coin_age'
+        self.current_model_config['initial_distribution'] = 'gini'
+        for reward_type in ('constant', 'geometric'):
+            self.current_model_config['reward_type'] = reward_type
+            for total_reward in (100, 1000, 10_000, 100_000, 1_000_000):  # Varying load factor c in 0.01, 0.1, 1, 10, 100
+                self.current_model_config['total_rewards'] = total_reward
+                for gini_initial_distribution in (.0, .2, .4, .6, .8, .99999):
+                    self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
+                    for coin_age_reduction_factor in (0, .2, .4, .6, .8, 1):
+                        self.current_model_config['coin_age_reduction_factor'] = coin_age_reduction_factor
+                        self.run_experiment()
+
+    def run_dynamic_weighted(self):
+        self.current_model_config['pos_type'] = 'dynamic_weighted'
+        self.current_model_config['initial_distribution'] = 'gini'
+        for reward_type in ('constant', 'geometric'):
+            self.current_model_config['reward_type'] = reward_type
+            for total_reward in (100, 1000, 10_000, 100_000, 1_000_000):  # Varying load factor c in 0.01, 0.1, 1, 10, 100
+                self.current_model_config['total_rewards'] = total_reward
+                for gini_initial_distribution in (.0, .2, .4, .6, .8, .99999):
+                    self.current_model_config['gini_initial_distribution'] = gini_initial_distribution
+                    for gini_threshold in (.4, .6, .8, 1):
+                        self.current_model_config['gini_threshold'] = gini_threshold
+                        self.run_experiment()
 
 
 def run_optimums():
@@ -191,6 +230,27 @@ def run_metrics_random_pos():
     return {metric: to_df(result_list) for metric, result_list in experiments.all_scores.items()}
 
 
+def run_metrics_weighted_pos():
+    metrics = [Metrics.gini_stakes_diff, Metrics.gini_rewards_diff]
+    experiments = Experiments(metrics)
+    experiments.run_weighted()
+    return {metric: to_df(result_list) for metric, result_list in experiments.all_scores.items()}
+
+
+def run_metrics_coin_age_pos():
+    metrics = [Metrics.gini_stakes_diff, Metrics.gini_rewards_diff]
+    experiments = Experiments(metrics)
+    experiments.run_coin_age()
+    return {metric: to_df(result_list) for metric, result_list in experiments.all_scores.items()}
+
+
+def run_metrics_dynamic_weighted():
+    metrics = [Metrics.gini_stakes_diff, Metrics.gini_rewards_diff]
+    experiments = Experiments(metrics)
+    experiments.run_dynamic_weighted()
+    return {metric: to_df(result_list) for metric, result_list in experiments.all_scores.items()}
+
+
 def main():
     logging.basicConfig(level=logging.INFO)
     try:
@@ -199,13 +259,53 @@ def main():
         raise Exception("Insert a valid type in [coin_age, dynamic_weighted, random, weighted, all_pos]")
     logging.info("Executing " + type + " experiments")
     match type:
+        case 'all':
+            experiments_visualization = ExperimentsVisualization(run_metrics_all_pos())
+            experiments_visualization.mean_and_std_per_pos_type()
+            experiments_visualization.metric_boxplot_grouped_by_pos_type()
+
+
         case 'random':
             experiments_visualization = ExperimentsVisualization(run_metrics_random_pos())
             experiments_visualization.distance_from_optimum()
+            experiments_visualization.mean_and_std_per_pos_type()
             experiments_visualization.summary()
             experiments_visualization.optimum()
             experiments_visualization.correlation()
             experiments_visualization.pairplot()
+            experiments_visualization.geom_const_boxplot()
+
+    match type:
+        case 'weighted':
+            experiments_visualization = ExperimentsVisualization(run_metrics_weighted_pos())
+            experiments_visualization.distance_from_optimum()
+            experiments_visualization.mean_and_std_per_pos_type()
+            experiments_visualization.summary()
+            experiments_visualization.optimum()
+            experiments_visualization.correlation()
+            experiments_visualization.pairplot()
+            experiments_visualization.geom_const_boxplot()
+    match type:
+        case 'coin_age':
+            experiments_visualization = ExperimentsVisualization(run_metrics_coin_age_pos())
+            experiments_visualization.distance_from_optimum()
+            experiments_visualization.mean_and_std_per_pos_type()
+            experiments_visualization.summary()
+            experiments_visualization.optimum()
+            experiments_visualization.correlation_reduction_factor()
+            experiments_visualization.pairplot_reduction_factor()
+            experiments_visualization.geom_const_boxplot()
+
+    match type:
+        case 'dynamic_weighted':
+            experiments_visualization = ExperimentsVisualization(run_metrics_dynamic_weighted())
+            experiments_visualization.distance_from_optimum()
+            experiments_visualization.mean_and_std_per_pos_type()
+            experiments_visualization.summary()
+            experiments_visualization.optimum()
+            experiments_visualization.correlation_gini_threshold()
+            experiments_visualization.pairplot_gini_threshold()
+            experiments_visualization.geom_const_boxplot()
 
 
 if __name__ == "__main__":

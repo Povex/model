@@ -13,15 +13,15 @@ class ExperimentsVisualization:
 
     def distance_from_optimum(self):
         for metric, df in self.metrics_df.items():
-            print(f"Head for metric {metric}")
+            logging.info(f"Head for metric {metric}")
             df = df.apply(lambda x: np.abs(x) if x.name == 'value' else x) \
                 .sort_values('value', ascending=True)
-            print(df)
+            logging.info(df)
 
     def mean_and_std_per_pos_type(self):
         for metric, df in self.metrics_df.items():
-            print(f"Mean and std for metric {metric}")
-            print(df.groupby(['pos_type']).agg({'value': ['mean', 'std']}).reset_index())
+            logging.info(f"Mean and std for metric {metric}")
+            logging.info(df.groupby(['pos_type']).agg({'value': ['mean', 'std']}).reset_index())
 
     def summary(self):
         plt.clf()
@@ -49,7 +49,24 @@ class ExperimentsVisualization:
 
     def pairplot(self):
         for metric, df in self.metrics_df.items():
-            df = df[['n_epochs', 'initial_stake_volume', 'total_rewards', 'reward_type', 'gini_initial_distribution', 'stop_epoch_after_validator', 'value']]
+            df = df[['n_epochs', 'initial_stake_volume', 'total_rewards', 'reward_type', 'gini_initial_distribution',
+                     'value']]
+            plt.clf()
+            sns.pairplot(df)
+            plt.savefig(f'results/{metric}_pair_plot')
+
+    def pairplot_reduction_factor(self):
+        for metric, df in self.metrics_df.items():
+            df = df[['n_epochs', 'initial_stake_volume', 'total_rewards', 'reward_type', 'coin_age_reduction_factor',
+                     'gini_initial_distribution', 'value']]
+            plt.clf()
+            sns.pairplot(df)
+            plt.savefig(f'results/{metric}_pair_plot')
+
+    def pairplot_gini_threshold(self):
+        for metric, df in self.metrics_df.items():
+            df = df[['n_epochs', 'initial_stake_volume', 'total_rewards', 'reward_type', 'gini_threshold',
+                     'gini_initial_distribution', 'value']]
             plt.clf()
             sns.pairplot(df)
             plt.savefig(f'results/{metric}_pair_plot')
@@ -57,9 +74,53 @@ class ExperimentsVisualization:
     def correlation(self):
         for metric, df in self.metrics_df.items():
             logging.info(f"Correlation statistics for metric {metric}")
-            df = df[['total_rewards', 'gini_initial_distribution', 'stop_epoch_after_validator', 'value']]
+            df = df[['total_rewards', 'gini_initial_distribution', 'value']]
             plt.clf()
             corr_matrix = df.corr()
             sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
             plt.savefig(f'results/{metric}_correlation_matrix', bbox_inches='tight')
 
+    def correlation_reduction_factor(self):
+        for metric, df in self.metrics_df.items():
+            logging.info(f"Correlation statistics for metric {metric}")
+            df = df[['total_rewards', 'gini_initial_distribution', 'coin_age_reduction_factor', 'value']]
+            plt.clf()
+            corr_matrix = df.corr()
+            sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
+            plt.savefig(f'results/{metric}_correlation_matrix', bbox_inches='tight')
+
+    def correlation_gini_threshold(self):
+        for metric, df in self.metrics_df.items():
+            logging.info(f"Correlation statistics for metric {metric}")
+            df = df[['total_rewards', 'gini_initial_distribution', 'gini_threshold', 'value']]
+            plt.clf()
+            corr_matrix = df.corr()
+            sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
+            plt.savefig(f'results/{metric}_correlation_matrix', bbox_inches='tight')
+
+    def geom_const_boxplot(self):
+        for metric, df in self.metrics_df.items():
+            plt.clf()
+            plt.rcParams.update({'font.size': 22})
+            logging.info(f"Constant and geometric boxplot for metric {metric}")
+            dfs = [df.query("reward_type == 'constant'")['value'],
+                   df.query("reward_type == 'geometric'")['value']]
+            plt.boxplot(dfs, labels=['constant', 'geometric'])
+            plt.savefig(f'results/{metric}_const_geom_boxplot')
+
+    def metric_boxplot_grouped_by_pos_type(self):
+        plt.clf()
+        for metric, df in self.metrics_df.items():
+            plt.clf()
+            dfs = []
+            x_values = []
+            pos_types = df['pos_type'].unique()
+            logging.info(f"Metric boxplot grouped by pos types {pos_types} for metric {metric}")
+            for pos_type in pos_types:
+                df_by_pos_type = df.query(f"pos_type == '{pos_type}'")
+                summary = df_by_pos_type.describe()
+                logging.info(f"{pos_type} summary", summary)
+                dfs.append(df_by_pos_type['value'])
+                x_values.append(pos_types)
+            plt.boxplot(dfs, labels=x_values)
+            plt.savefig(f'results/{metric}_by_pos_types')
