@@ -21,7 +21,7 @@ After the python installation, this project can be cloned with git:
 - `git@github.com:Povex/model.git`
 
 After the installation can be useful to setup a virtual environment:
--`python3 -m venv env`
+- `python3 -m venv env`
 And activate it:
 - `source env/bin/activate`
 The project dependencies can be installed with:
@@ -62,7 +62,7 @@ The parameters of a model can be setted modifying the `model_config.json` file, 
 }
 ```
 A model configuration can also be setted at run time, using the singleton object of type `ModelConfig`:
-- `custom_config = {n_agents": 10, "n_epochs": 1000,"initial_stake_volume": 1000.0,.....}
+- `custom_config = {n_agents": 10, "n_epochs": 1000,"initial_stake_volume": 1000.0,.....}`
 - `sim.ModelConfig(custom_config)` 
 
 After the needed paramenters are choosen, the model can be runned with the following instructions:
