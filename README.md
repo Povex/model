@@ -69,7 +69,7 @@ After the needed paramenters are choosen, the model can be runned with the follo
 - From the project root directory: `python3` to get the python3 REPL:
 - Import the simulator library with `import simulator as sim`
 - Set the number of parallel simulations: `n_parallel_simulations = 2`
-- Run the model and obtain an history `history = sim.ModelRunner.run(n_parallel_simulations)
+- Run the model and obtain an history `history = sim.ModelRunner.run(n_parallel_simulations)`
 
 The `history` object obtained is a pandas dataframe that contains all the epochs runned for all the parallel simulation setted.
 The `history` object can be then analyzed, for example, can be obtained the Gini concentration index of an epoch executing the `gini_concentration_index\1` function inside the `statistics` package:
