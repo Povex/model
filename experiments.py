@@ -19,7 +19,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 def get_default_model_config():
     return {
         "n_agents": 10,
-        "n_epochs": 10,
+        "n_epochs": 10000,
         "initial_stake_volume": 1000.0,
         "total_rewards": 10000,
         'reward_type': 'constant',

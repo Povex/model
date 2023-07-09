@@ -18,7 +18,7 @@ def get_default_model_config():
         "n_agents": 10,
         "n_epochs": 1000,
         "initial_stake_volume": 1000.0,
-        "total_rewards": 10000,
+        "total_rewards": 1000,
         'reward_type': 'constant',
 
         "stop_epoch_after_validator": 0,

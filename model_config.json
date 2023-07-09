@@ -1,9 +1,9 @@
 {
     "n_agents": 10,
-    "n_epochs": 50000,
-    "pos_type": "dynamic_weighted",
+    "n_epochs": 500000,
+    "pos_type": "weighted",
     "initial_distribution": "gini",
-    "gini_initial_distribution": 0.7,
+    "gini_initial_distribution": 0.0,
     "log_weighted_base": 1.0,
     "log_shift_factor": 1.009,
     "custom_distribution": [

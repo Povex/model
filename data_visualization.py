@@ -126,6 +126,7 @@ class DataVisualization:
         plt.title("First epoch", fontsize=14)
         plt.ylabel('N°agents', fontsize=11)
         plt.xlabel('stake', fontsize=11)
+        plt.ylim(1, 10)
         plt.hist(self.history.query(f"simulation == {0}").query(f"epoch == {0}")["stake"], bins=10)
         plt.subplot(1, 2, 2)
         plt.grid(axis='y')
@@ -135,7 +136,7 @@ class DataVisualization:
 
         last_epoch = self.history['epoch'].max()
         # Media per ogni agente e std ?
-
+        plt.ylim(1, 10)
         plt.hist(self.history.query(f"simulation == {0}").query(f"epoch == {last_epoch}")["stake"], bins=10)
         return fig
 

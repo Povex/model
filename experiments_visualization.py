@@ -119,8 +119,10 @@ class ExperimentsVisualization:
             for pos_type in pos_types:
                 df_by_pos_type = df.query(f"pos_type == '{pos_type}'")
                 summary = df_by_pos_type.describe()
-                logging.info(f"{pos_type} summary", summary)
+                logging.info(f"Summary for {metric} and {pos_type}")
+                logging.info(summary)
                 dfs.append(df_by_pos_type['value'])
-                x_values.append(pos_types)
+                x_values.append(pos_type)
+            plt.title(f"{metric}")
             plt.boxplot(dfs, labels=x_values)
             plt.savefig(f'results/{metric}_by_pos_types')
